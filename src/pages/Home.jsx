@@ -5,6 +5,8 @@ import L from "leaflet";
 import axios from "axios";
 import icono from "../assets/pharmacy-icon.png";
 
+const API_URL = import.meta.env.VITE_API_URL; // <-- Variable de entorno
+
 // Configuración del ícono del marcador
 const pharmacyIcon = new L.Icon({
   iconUrl: icono,
@@ -29,12 +31,13 @@ function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Obtener farmacias
   useEffect(() => {
     const fetchFarmacias = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        let url = "http://localhost:5000/api/farmacias";
+        let url = `${API_URL}/api/farmacias`;
         if (filtro) url += `/filtradas?filtro=${filtro}`;
 
         const response = await axios.get(url);
@@ -50,18 +53,18 @@ function Home() {
     fetchFarmacias();
   }, [filtro]);
 
+  // Seleccionar farmacia
   const handleSelectFarmacia = async (farmacia) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`http://localhost:5000/api/farmacias/${farmacia.id}`);
+      const response = await axios.get(`${API_URL}/api/farmacias/${farmacia.id}`);
       let farmaciaData = response.data;
-      
-      // Asegurar que la imagen tenga el formato correcto
-      if (farmaciaData.image && !farmaciaData.image.startsWith('data:image')) {
+
+      if (farmaciaData.image && !farmaciaData.image.startsWith("data:image")) {
         farmaciaData.image = `data:image/jpeg;base64,${farmaciaData.image}`;
       }
-      
+
       setSelectedFarmacia(farmaciaData);
     } catch (error) {
       console.error("Error al obtener detalles de la farmacia:", error);
@@ -77,6 +80,7 @@ function Home() {
 
   return (
     <div className="container mt-4">
+      {/* Header */}
       <div className="row mb-4">
         <div className="col-12">
           <h1 className="text-center text-primary mb-3">Sedes Farmacias</h1>
@@ -84,6 +88,7 @@ function Home() {
         </div>
       </div>
 
+      {/* Buscador */}
       <div className="row mb-4">
         <div className="col-md-8 offset-md-2">
           <div className="input-group">
@@ -101,6 +106,7 @@ function Home() {
         </div>
       </div>
 
+      {/* Error */}
       {error && (
         <div className="row mb-4">
           <div className="col-12">
@@ -126,17 +132,14 @@ function Home() {
               ) : selectedFarmacia ? (
                 <>
                   <h4 className="card-title text-center mb-3">{selectedFarmacia.name}</h4>
-                  
+
                   {selectedFarmacia.image ? (
                     <div className="text-center mb-3">
-                      <img 
-                        src={selectedFarmacia.image} 
+                      <img
+                        src={selectedFarmacia.image}
                         alt={`Farmacia ${selectedFarmacia.name}`}
                         className="img-fluid rounded shadow"
-                        style={{ 
-                          maxHeight: '200px',
-                          objectFit: 'cover'
-                        }}
+                        style={{ maxHeight: "200px", objectFit: "cover" }}
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = icono;
@@ -145,39 +148,43 @@ function Home() {
                     </div>
                   ) : (
                     <div className="text-center mb-3">
-                      <img 
-                        src={icono} 
+                      <img
+                        src={icono}
                         alt="Farmacia sin imagen"
                         className="img-fluid rounded"
-                        style={{ maxHeight: '150px' }}
+                        style={{ maxHeight: "150px" }}
                       />
                     </div>
                   )}
-                  
+
                   <ul className="list-group list-group-flush mb-3">
                     <li className="list-group-item">
-                      <strong>Sector:</strong> {selectedFarmacia.sectorType == '0' ? 'Privado' : 'Público'}
+                      <strong>Sector:</strong>{" "}
+                      {selectedFarmacia.sectorType === "0" ? "Privado" : "Público"}
                     </li>
                     <li className="list-group-item">
-                      <strong>Horario de Apertura:</strong> {selectedFarmacia.openingHours === '8' ? '8:00 AM' : '12:00 PM'}
+                      <strong>Horario de Apertura:</strong>{" "}
+                      {selectedFarmacia.openingHours === "8" ? "8:00 AM" : "12:00 PM"}
                     </li>
                     <li className="list-group-item">
-                      <strong>Dirección:</strong> {selectedFarmacia.address || 'No disponible'}
+                      <strong>Dirección:</strong> {selectedFarmacia.address || "No disponible"}
                     </li>
                     <li className="list-group-item">
-                      <strong>NIT:</strong> {selectedFarmacia.nit || 'No disponible'}
+                      <strong>NIT:</strong> {selectedFarmacia.nit || "No disponible"}
                     </li>
                   </ul>
                 </>
               ) : (
                 <div className="text-center py-4">
-                  <img 
-                    src={icono} 
+                  <img
+                    src={icono}
                     alt="Seleccione una farmacia"
                     className="img-fluid mb-3"
-                    style={{ maxHeight: '150px' }}
+                    style={{ maxHeight: "150px" }}
                   />
-                  <p className="text-muted">Seleccione una farmacia en el mapa para ver más detalles</p>
+                  <p className="text-muted">
+                    Seleccione una farmacia en el mapa para ver más detalles
+                  </p>
                 </div>
               )}
             </div>
@@ -191,14 +198,14 @@ function Home() {
               <h5 className="mb-0">Mapa de Farmacias</h5>
             </div>
             <div className="card-body p-0">
-              <div style={{ height: '100%', minHeight: '400px' }}>
-                <MapContainer 
-                  center={[-17.3934, -66.1451]} 
-                  zoom={13} 
-                  style={{ height: '100%', width: '100%' }}
+              <div style={{ height: "100%", minHeight: "400px" }}>
+                <MapContainer
+                  center={[-17.3934, -66.1451]}
+                  zoom={13}
+                  style={{ height: "100%", width: "100%" }}
                 >
-                  <TileLayer 
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
                   {farmaciasFiltradas.map((farmacia) => {
@@ -206,7 +213,11 @@ function Home() {
                     const longitud = parseFloat(farmacia.longitude);
 
                     if (isNaN(latitud) || isNaN(longitud)) {
-                      console.error(`Coordenadas inválidas para ${farmacia.name}:`, latitud, longitud);
+                      console.error(
+                        `Coordenadas inválidas para ${farmacia.name}:`,
+                        latitud,
+                        longitud
+                      );
                       return null;
                     }
 
@@ -215,18 +226,18 @@ function Home() {
                         key={farmacia.id}
                         position={[latitud, longitud]}
                         icon={pharmacyIcon}
-                        eventHandlers={{ 
+                        eventHandlers={{
                           click: () => handleSelectFarmacia(farmacia),
-                          mouseover: (e) => e.target.openPopup()
+                          mouseover: (e) => e.target.openPopup(),
                         }}
                       >
                         <Popup>
                           <div>
                             <h6>{farmacia.name}</h6>
                             <p className="mb-1">
-                              <small>{farmacia.address || 'Dirección no disponible'}</small>
+                              <small>{farmacia.address || "Dirección no disponible"}</small>
                             </p>
-                            <button 
+                            <button
                               className="btn btn-sm btn-primary mt-1"
                               onClick={() => handleSelectFarmacia(farmacia)}
                             >
@@ -251,21 +262,21 @@ function Home() {
             </div>
             <div className="card-body">
               <div className="d-grid gap-2">
-                <button 
+                <button
                   className={`btn ${filtro === "" ? "btn-primary" : "btn-outline-primary"}`}
                   onClick={() => setFiltro("")}
                 >
                   Todas las Farmacias
                 </button>
-                
-                <button 
+
+                <button
                   className={`btn ${filtro === "con_sustancias" ? "btn-primary" : "btn-outline-primary"}`}
                   onClick={() => setFiltro("con_sustancias")}
                 >
                   Con Sustancias Controladas
                 </button>
-                
-                <button 
+
+                <button
                   className={`btn ${filtro === "turno_hoy" ? "btn-primary" : "btn-outline-primary"}`}
                   onClick={() => setFiltro("turno_hoy")}
                 >

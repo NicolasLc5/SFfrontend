@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import FarmaciaForm from '../components/FarmaciaForm';
 
+const API_URL = import.meta.env.VITE_API_URL; // <-- Variable de entorno
+
 function Farmacias() {
   const [farmacias, setFarmacias] = useState([]);
-  const [selectedFarmaciaId, setSelectedFarmaciaId] = useState(null); // Estado añadido
+  const [selectedFarmaciaId, setSelectedFarmaciaId] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -15,10 +17,11 @@ function Farmacias() {
   const fetchFarmacias = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/farmacias');
+      const response = await axios.get(`${API_URL}/api/farmacias`);
       setFarmacias(response.data);
     } catch (error) {
       console.error('Error al obtener farmacias:', error);
+      alert('Error al cargar farmacias: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -38,7 +41,7 @@ function Farmacias() {
   const handleDeleteFarmacia = async (id) => {
     if (window.confirm('¿Está seguro de eliminar esta farmacia?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/farmacias/${id}`);
+        await axios.delete(`${API_URL}/api/farmacias/${id}`);
         setFarmacias(farmacias.filter(farmacia => farmacia.id !== id));
       } catch (error) {
         console.error('Error al eliminar farmacia:', error);
@@ -81,7 +84,7 @@ function Farmacias() {
                 <td>
                   <button 
                     className="btn btn-sm btn-warning me-2"
-                    onClick={() => handleOpenForm(farmacia.id)} // Pasamos solo el ID
+                    onClick={() => handleOpenForm(farmacia.id)}
                   >
                     Editar
                   </button>

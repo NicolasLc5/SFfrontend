@@ -13,7 +13,7 @@ function Duenios() {
 
   const fetchDuenios = () => {
     axios
-      .get("http://localhost:5000/api/duenios")
+      .get("https://sfbackend-y03h.onrender.com/api/duenios")
       .then((response) => setDuenios(response.data))
       .catch((error) => console.error("Error al obtener dueños:", error));
   };
