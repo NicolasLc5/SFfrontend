@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL; // ✅ Variable de entorno para Render
+
 function UserForm({ user, onClose, setUsers, users }) {
   const [formData, setFormData] = useState({
     username: "",
@@ -8,12 +10,14 @@ function UserForm({ user, onClose, setUsers, users }) {
     gmail: "",
     rol: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (user) {
       setFormData({
         username: user.username,
-        password: "", // No se muestra la contraseña actual por seguridad
+        password: "", // Nunca mostramos contraseña actual
         gmail: user.gmail,
         rol: user.rol,
       });
@@ -24,55 +28,102 @@ function UserForm({ user, onClose, setUsers, users }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (user) {
-      axios
-        .put(`http://localhost:5000/api/usuarios/${user.id}`, formData)
-        .then((response) => {
-          setUsers(users.map((u) => (u.id === user.id ? response.data : u)));
-          onClose();
-        })
-        .catch((error) => console.error("Error al actualizar usuario:", error));
-    } else {
-      axios
-        .post("http://localhost:5000/api/usuarios", formData)
-        .then((response) => {
-          setUsers([...users, response.data]);
-          onClose();
-        })
-        .catch((error) => console.error("Error al crear usuario:", error));
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      if (user) {
+        // Editar usuario
+        const res = await axios.put(`${API_URL}/api/usuarios/${user.id}`, formData);
+        setUsers(users.map((u) => (u.id === user.id ? res.data : u)));
+      } else {
+        // Crear usuario
+        const res = await axios.post(`${API_URL}/api/usuarios`, formData);
+        setUsers([...users, res.data]);
+      }
+      onClose();
+    } catch (err) {
+      console.error("Error en formulario usuario:", err);
+      setError(err.response?.data?.message || "Error al guardar usuario");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="modal show d-block">
+    <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">{user ? "Editar Usuario" : "Crear Usuario"}</h5>
-            <button className="btn-close" onClick={onClose}></button>
+            <button className="btn-close" onClick={onClose} disabled={isSubmitting}></button>
           </div>
           <div className="modal-body">
+            {error && <div className="alert alert-danger">{error}</div>}
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="form-label">Usuario</label>
-                <input type="text" className="form-control" name="username" value={formData.username} onChange={handleChange} required />
+                <input
+                  type="text"
+                  className="form-control"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">Contraseña</label>
-                <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} required={!user} />
+                <input
+                  type="password"
+                  className="form-control"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required={!user} // Obligatoria solo al crear
+                  disabled={isSubmitting}
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">Email</label>
-                <input type="email" className="form-control" name="gmail" value={formData.gmail} onChange={handleChange} required />
+                <input
+                  type="email"
+                  className="form-control"
+                  name="gmail"
+                  value={formData.gmail}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">Rol</label>
-                <input type="text" className="form-control" name="rol" value={formData.rol} onChange={handleChange} required />
+                <input
+                  type="text"
+                  className="form-control"
+                  name="rol"
+                  value={formData.rol}
+                  onChange={handleChange}
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
-              <button type="submit" className="btn btn-success">Guardar</button>
-              <button type="button" className="btn btn-secondary ms-2" onClick={onClose}>Cancelar</button>
+              <div className="modal-footer">
+                <button type="submit" className="btn btn-success" disabled={isSubmitting}>
+                  {isSubmitting ? "Guardando..." : "Guardar"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary ms-2"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </button>
+              </div>
             </form>
           </div>
         </div>

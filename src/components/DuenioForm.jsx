@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL; // <-- Variable de entorno
+
 function DuenioForm({ duenio, onClose, setDuenios, duenios }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -10,6 +12,8 @@ function DuenioForm({ duenio, onClose, setDuenios, duenios }) {
     cellphone: "",
     gmail: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (duenio) {
@@ -28,24 +32,27 @@ function DuenioForm({ duenio, onClose, setDuenios, duenios }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (duenio) {
-      axios
-        .put(`http://localhost:5000/api/duenios/${duenio.id}`, formData)
-        .then((response) => {
-          setDuenios(duenios.map(d => d.id === duenio.id ? response.data : d));
-          onClose();
-        })
-        .catch((error) => console.error("Error al actualizar dueño:", error));
-    } else {
-      axios
-        .post("http://localhost:5000/api/duenios", formData)
-        .then((response) => {
-          setDuenios([...duenios, response.data]);
-          onClose();
-        })
-        .catch((error) => console.error("Error al crear dueño:", error));
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      if (duenio) {
+        // Actualizar
+        const response = await axios.put(`${API_URL}/api/duenios/${duenio.id}`, formData);
+        setDuenios(duenios.map(d => d.id === duenio.id ? response.data : d));
+      } else {
+        // Crear
+        const response = await axios.post(`${API_URL}/api/duenios`, formData);
+        setDuenios([...duenios, response.data]);
+      }
+      onClose();
+    } catch (err) {
+      console.error("Error al guardar dueño:", err);
+      setError(err.response?.data?.message || "Ocurrió un error al guardar el dueño");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -58,6 +65,7 @@ function DuenioForm({ duenio, onClose, setDuenios, duenios }) {
             <button className="btn-close" onClick={onClose}></button>
           </div>
           <div className="modal-body">
+            {error && <div className="alert alert-danger">{error}</div>}
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="form-label">Nombre</label>
@@ -89,8 +97,10 @@ function DuenioForm({ duenio, onClose, setDuenios, duenios }) {
                 <input type="email" className="form-control" name="gmail" 
                   value={formData.gmail} onChange={handleChange} />
               </div>
-              <button type="submit" className="btn btn-success">Guardar</button>
-              <button type="button" className="btn btn-secondary ms-2" onClick={onClose}>
+              <button type="submit" className="btn btn-success" disabled={isSubmitting}>
+                {isSubmitting ? "Guardando..." : "Guardar"}
+              </button>
+              <button type="button" className="btn btn-secondary ms-2" onClick={onClose} disabled={isSubmitting}>
                 Cancelar
               </button>
             </form>
